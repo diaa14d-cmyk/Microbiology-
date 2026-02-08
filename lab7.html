@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار Lab 7 - Gram-negative Only</title>
+    <style>
+        :root { --main: #ff7675; --accent: #6c5ce7; --success: #00b894; --bg: #f7f1e3; }
+        body { font-family: 'Segoe UI', Tahoma; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        #quiz-container { background: white; width: 90%; max-width: 550px; padding: 30px; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); text-align: center; position: relative; border-top: 10px solid var(--main); }
+        .score-info { display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: bold; color: var(--accent); font-size: 1.1rem; }
+        .q-text { font-size: 1.25rem; color: #2d3436; margin: 25px 0; direction: ltr; text-align: left; line-height: 1.4; }
+        .options { display: grid; gap: 12px; }
+        button { padding: 15px; border: 2px solid #fab1a0; border-radius: 15px; background: white; cursor: pointer; transition: 0.3s; font-size: 1rem; direction: ltr; font-weight: bold; }
+        button:hover:not(:disabled) { background: #ffeaa7; transform: scale(1.02); }
+        .correct { background: var(--success) !important; color: white; }
+        .wrong { background: #d63031 !important; color: white; }
+        #feedback { margin-top: 20px; padding: 15px; border-radius: 15px; display: none; text-align: left; direction: ltr; background: #dfe6e9; border-left: 5px solid var(--accent); }
+        #next-btn { margin-top: 25px; background: var(--accent); color: white; border: none; padding: 15px 40px; border-radius: 50px; cursor: pointer; display: none; width: 100%; font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <div class="score-info">
+        <div id="score">النتيجة: 0</div>
+        <div id="progress">1 / 25</div>
+    </div>
+    <div id="question-area">
+        <div class="q-text" id="q-text"></div>
+        <div class="options" id="options"></div>
+    </div>
+    <div id="feedback"></div>
+    <button id="next-btn" onclick="nextQ()">السؤال التالي ➔</button>
+</div>
+
+<script>
+const gramNegData = [
+    {q: "Gram-negative bacteria appear in which color?", a: "Red or pink", o: ["Purple", "Red or pink", "Blue"], p: 14, i: "Gram-Negative Bacteria: 1. appear in red or pink color."},
+    {q: "Which bacterium causes Typhoid fever?", a: "Salmonella", o: ["Escherichia coli", "Salmonella", "Brucella"], p: 14, i: "Table: Salmonella causes Typhoid fever."},
+    {q: "Escherichia coli (E. coli) causes which condition?", a: "Urinary tract infection", o: ["Typhoid", "Urinary tract infection", "Syphilis"], p: 14, i: "Table: Escherichia coli causes Urinary tract infection."},
+    {q: "What is the disease caused by Vibrio cholerae?", a: "Cholera", o: ["Cholera", "Brucellosis", "Syphilis"], p: 14, i: "Table: Vibrio cholerae causes Cholera."},
+    {q: "Which bacterium is the causative agent of Syphilis?", a: "Treponema pallidum", o: ["Brucella", "Vibrio cholerae", "Treponema pallidum"], p: 14, i: "Table: Treponema pallidum causes Syphilis."},
+    {q: "Brucella is responsible for which disease?", a: "Brucellosis (Malta fever)", o: ["Cholera", "Brucellosis (Malta fever)", "Typhoid"], p: 14, i: "Table: Brucella causes Brucellosis (Malta fever)."},
+    {q: "What is the shape of Treponema pallidum?", a: "Spiral", o: ["Rod", "Cocci", "Spiral"], p: 14, i: "Table: Treponema pallidum shape is Spiral."},
+    {q: "Which of these is a Gram-negative rod (Bacilli)?", a: "Salmonella", o: ["Treponema pallidum", "Salmonella", "Both of them"], p: 14, i: "Salmonella and E. coli are rods, whereas Treponema is spiral."},
+    {q: "Malta fever is another name for Brucellosis.", a: "True", o: ["True", "False"], p: 14, i: "Table: Brucella - Brucellosis (Malta fever)."},
+    {q: "Vibrio cholerae is a Gram-negative bacterium.", a: "True", o: ["True", "False"], p: 14, i: "It is listed under the Gram-negative section (Page 14)."},
+    {q: "Urinary tract infection is commonly caused by Salmonella.", a: "False", o: ["True", "False"], p: 14, i: "UTI is caused by E. coli, Salmonella causes Typhoid."},
+    {q: "Treponema pallidum is Gram-positive.", a: "False", o: ["True", "False"], p: 14, i: "No, it is listed as Gram-negative."},
+    {q: "The color of Gram-negative bacteria is due to the counterstain (Safranin).", a: "True", o: ["True", "False"], p: 14, i: "Gram-negative cells take the color of the counterstain (red/pink)."},
+    {q: "How many Gram-negative examples are in the table on page 14?", a: "5", o: ["3", "4", "5"], p: 14, i: "The table lists: E. coli, Salmonella, Vibrio cholerae, Treponema pallidum, and Brucella."},
+    {q: "Is Salmonella a spiral bacterium?", a: "No", o: ["Yes", "No"], p: 14, i: "No, Salmonella is a rod-shaped (bacillus) bacterium."},
+    {q: "All bacteria in the Gram-negative table are human pathogens.", a: "True", o: ["True", "False"], p: 14, i: "They all cause diseases like Cholera, Typhoid, and Syphilis."},
+    {q: "Which disease is associated with the urinary system in Lab 7?", a: "Urinary tract infection", o: ["Syphilis", "Urinary tract infection", "Typhoid"], p: 14, i: "Caused by Escherichia coli."},
+    {q: "Vibrio cholerae is often described as comma-shaped.", a: "True", o: ["True", "False"], p: 14, i: "General microbiology fact (Vibrio means comma-shaped)."},
+    {q: "Which bacterium causes a disease also known as 'Malta fever'?", a: "Brucella", o: ["E. coli", "Salmonella", "Brucella"], p: 14, i: "Table: Brucella causes Malta fever."},
+    {q: "Gram-negative bacteria have an outer membrane.", a: "True", o: ["True", "False"], p: 13, i: "Recall from Lab 6 comparison: Gram-negative has an outer membrane (relevant to page 14)."},
+    {q: "Typhoid fever is caused by E. coli.", a: "False", o: ["True", "False"], p: 14, i: "False, it is caused by Salmonella."},
+    {q: "Treponema pallidum is the only spiral bacterium in the Lab 7 table.", a: "True", o: ["True", "False"], p: 14, i: "The others are rods or comma-shaped."},
+    {q: "Which is the causative agent of Syphilis?", a: "Treponema pallidum", o: ["Salmonella", "Treponema pallidum", "Brucella"], p: 14, i: "Directly from the table on page 14."},
+    {q: "E. coli is Gram-negative.", a: "True", o: ["True", "False"], p: 14, i: "Correct, it appears red/pink under the microscope."},
+    {q: "Brucellosis is caused by Brucella species.", a: "True", o: ["True", "False"], p: 14, i: "Correct."}
+];
+
+let qList = [], cIdx = 0, score = 0;
+function start() { qList = gramNegData.sort(() => Math.random() - 0.5); render(); }
+function render() {
+    let q = qList[cIdx];
+    document.getElementById('q-text').innerText = q.q;
+    document.getElementById('progress').innerText = `${cIdx + 1} / 25`;
+    let opts = document.getElementById('options'); opts.innerHTML = '';
+    q.o.forEach(o => {
+        let b = document.createElement('button'); b.innerText = o;
+        b.onclick = () => check(o, b); opts.appendChild(b);
+    });
+    document.getElementById('feedback').style.display = 'none';
+    document.getElementById('next-btn').style.display = 'none';
+}
+function check(choice, b) {
+    let q = qList[cIdx]; let f = document.getElementById('feedback');
+    if(choice === q.a) { score++; b.classList.add('correct'); f.innerHTML = "✅ <b>صحيح!</b><br>صفحة " + q.p + ": " + q.i; }
+    else { b.classList.add('wrong'); f.innerHTML = "❌ <b>خطأ!</b><br>صفحة " + q.p + ": " + q.i; }
+    f.style.display = 'block'; document.getElementById('next-btn').style.display = 'block';
+    document.getElementById('score').innerText = `النتيجة: ${score}`;
+    Array.from(document.querySelectorAll('.options button')).forEach(btn => btn.disabled = true);
+}
+function nextQ() { 
+    cIdx++; 
+    if(cIdx < 25) render(); 
+    else document.getElementById('quiz-container').innerHTML = `<h2>أحسنت!</h2><h3>أنهيت مراجعة Gram-negative في Lab 7</h3><h3>درجتك: ${score}/25</h3><button onclick="location.reload()" style="padding:15px; border-radius:15px; border:none; background:var(--accent); color:white; cursor:pointer; width:100%;">إعادة الاختبار</button>`;
+}
+start();
+</script>
+</body>
+</html>

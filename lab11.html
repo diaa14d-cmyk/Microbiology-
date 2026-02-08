@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار Lab 11 - علم الفطريات</title>
+    <style>
+        :root { --main: #ff7675; --accent: #6c5ce7; --success: #00b894; --bg: #f7f1e3; }
+        body { font-family: 'Segoe UI', Tahoma; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        #quiz-container { background: white; width: 90%; max-width: 550px; padding: 30px; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); text-align: center; position: relative; border-top: 10px solid var(--main); }
+        .score-info { display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: bold; color: var(--accent); font-size: 1.1rem; }
+        .q-text { font-size: 1.25rem; color: #2d3436; margin: 25px 0; direction: ltr; line-height: 1.4; min-height: 50px; text-align: left; }
+        .options { display: grid; gap: 12px; }
+        button { padding: 15px; border: 2px solid #fab1a0; border-radius: 15px; background: white; cursor: pointer; transition: 0.3s; font-size: 1rem; direction: ltr; font-weight: bold; color: #444; }
+        button:hover:not(:disabled) { background: #ffeaa7; transform: scale(1.02); }
+        .correct { background: var(--success) !important; color: white; border-color: #55efc4; }
+        .wrong { background: #d63031 !important; color: white; border-color: #ff7675; }
+        #feedback { margin-top: 20px; padding: 15px; border-radius: 15px; display: none; text-align: left; direction: ltr; font-size: 0.9rem; background: #dfe6e9; border-left: 5px solid var(--accent); line-height: 1.4; }
+        #next-btn { margin-top: 25px; background: var(--accent); color: white; border: none; padding: 15px 40px; border-radius: 50px; cursor: pointer; display: none; font-size: 1.1rem; width: 100%; box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3); }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <div class="score-info">
+        <div id="score">النتيجة: 0</div>
+        <div id="progress">1 / 35</div>
+    </div>
+    <div id="question-area">
+        <div class="q-text" id="q-text"></div>
+        <div class="options" id="options"></div>
+    </div>
+    <div id="feedback"></div>
+    <button id="next-btn" onclick="nextQ()">السؤال التالي ➔</button>
+</div>
+
+<script>
+const lab11Data = [
+    {q: "Fungi are eukaryotic organisms.", a: "True", o: ["True", "False"], p: 21, i: "Fungi are eukaryotic organisms."},
+    {q: "Fungi contain chlorophyll and are autotrophic.", a: "False", o: ["True", "False"], p: 21, i: "Fungi do not contain chlorophyll (heterotrophic)."},
+    {q: "Fungi are primarily saprophytes, obtaining food from dead matter.", a: "True", o: ["True", "False"], p: 21, i: "They are primarily saprophytes."},
+    {q: "Which fungal form is unicellular?", a: "Yeasts", o: ["Yeasts", "Molds", "Mycelium"], p: 21, i: "Yeasts: Unicellular fungi."},
+    {q: "Yeasts reproduce primarily by budding.", a: "True", o: ["True", "False"], p: 21, i: "Yeasts reproduce by budding."},
+    {q: "Molds are multicellular and form a mass called mycelium.", a: "True", o: ["True", "False"], p: 21, i: "Molds: Multicellular, form a mass termed 'mycelium'."},
+    {q: "The filament of mycelium is called a hypha.", a: "True", o: ["True", "False"], p: 21, i: "Hypha: It is filament of mycelium."},
+    {q: "Dimorphic fungi exist as yeast at 25 °C.", a: "False", o: ["True", "False"], p: 21, i: "Exist as molds at 25 °C and as yeast at 37 °C."},
+    {q: "At body temperature (37 °C), dimorphic fungi exist as:", a: "Yeast", o: ["Mold", "Yeast", "Spores"], p: 21, i: "Exist as yeast at body temperature (37 °C)."},
+    {q: "Pityriasis versicolor is an example of superficial mycoses.", a: "True", o: ["True", "False"], p: 21, i: "Superficial mycoses: e.g. Pityriasis versicolor."},
+    {q: "Dermatophytosis is a cutaneous mycosis.", a: "True", o: ["True", "False"], p: 21, i: "Cutaneous mycoses: e.g. Dermatophytosis."},
+    {q: "Sporotrichosis is an example of subcutaneous mycoses.", a: "True", o: ["True", "False"], p: 21, i: "Subcutaneous mycoses: e.g. Sporotrichosis."},
+    {q: "Aspergillosis is classified as an opportunistic mycosis.", a: "True", o: ["True", "False"], p: 21, i: "Opportunistic mycoses: e.g. Aspergillosis."},
+    {q: "Which reagent is used to examine hair, nails, and skin scrapings?", a: "10 % KOH", o: ["India ink", "10 % KOH", "Gram stain"], p: 22, i: "10 % KOH for examination of hair, nails, skin scraping."},
+    {q: "India ink is used for the diagnosis of Cryptococcus neoformans.", a: "True", o: ["True", "False"], p: 22, i: "India ink used for diagnosis of Cryptococcus neoformans in spinal fluid."},
+    {q: "Which stains make fungal walls appear black or red?", a: "GMS and PAS", o: ["Crystal violet", "GMS and PAS", "Methylene blue"], p: 22, i: "GMS and PAS stain fungal walls black or red."},
+    {q: "Sabouraud Dextrose Agar (SDA) is used for culturing fungi.", a: "True", o: ["True", "False"], p: 22, i: "One of the most common media used is Sabouraud Dextrose Agar."},
+    {q: "Mycelium is a mass of hyphae.", a: "True", o: ["True", "False"], p: 21, i: "Mycelium: It is mass of hyphae making up the body of a fungus."},
+    {q: "Fungi reproduce by spores or conidia.", a: "True", o: ["True", "False"], p: 21, i: "Reproduction is by spores or conidia."},
+    {q: "Systemic mycoses include Coccidioidomycosis.", a: "True", o: ["True", "False"], p: 21, i: "Systemic mycoses: e.g. Coccidioidomycosis."},
+    {q: "Fungi have a rigid cell wall.", a: "True", o: ["True", "False"], p: 21, i: "Common characteristic of fungi."},
+    {q: "Yeasts are larger than most bacteria.", a: "True", o: ["True", "False"], p: 21, i: "Biological fact mentioned in fungal studies."},
+    {q: "Molds grow at ambient temperature (25 °C).", a: "True", o: ["True", "False"], p: 21, i: "Molds exist in the environment at ambient temperature."},
+    {q: "Cryptococcus neoformans is found in spinal fluid.", a: "True", o: ["True", "False"], p: 22, i: "Mentioned in the India ink section."},
+    {q: "KOH stands for Potassium Hydroxide.", a: "True", o: ["True", "False"], p: 22, i: "10% KOH is potassium hydroxide, used to dissolve keratin."},
+    {q: "Is Coccidioidomycosis an opportunistic mycosis?", a: "No", o: ["Yes", "No"], p: 21, i: "It is a Systemic mycosis."},
+    {q: "Heterotrophic means the organism cannot make its own food.", a: "True", o: ["True", "False"], p: 21, i: "Fungi obtain nutrients from organic matter."},
+    {q: "Budding is a form of sexual reproduction.", a: "False", o: ["True", "False"], p: 21, i: "Budding is an asexual reproduction method for yeasts."},
+    {q: "GMS stands for Gomori-Methenamine Silver.", a: "True", o: ["True", "False"], p: 22, i: "Reagents used to facilitate detection."},
+    {q: "PAS stands for Periodic Acid-Schiff.", a: "True", o: ["True", "False"], p: 22, i: "Stains fungal walls red."},
+    {q: "Fungi can be both unicellular and multicellular.", a: "True", o: ["True", "False"], p: 21, i: "Yeasts (unicellular) and Molds (multicellular)."},
+    {q: "Superficial mycoses affect the internal organs.", a: "False", o: ["True", "False"], p: 21, i: "No, they affect only the outermost layers of skin/hair."},
+    {q: "Opportunistic mycoses occur in immunocompromised patients.", a: "True", o: ["True", "False"], p: 21, i: "Definition of opportunistic infections."},
+    {q: "SDA medium has a low pH to inhibit bacteria.", a: "True", o: ["True", "False"], p: 22, i: "Sabouraud agar is selective for fungi due to its acidity."},
+    {q: "Hyphae are the building blocks of mold.", a: "True", o: ["True", "False"], p: 21, i: "Hypha is the filament of mycelium."}
+];
+
+let qList = [], cIdx = 0, score = 0;
+function start() { qList = lab11Data.sort(() => Math.random() - 0.5); render(); }
+function render() {
+    let q = qList[cIdx];
+    document.getElementById('q-text').innerText = q.q;
+    document.getElementById('progress').innerText = `${cIdx + 1} / 35`;
+    let opts = document.getElementById('options'); opts.innerHTML = '';
+    q.o.forEach(o => {
+        let b = document.createElement('button'); b.innerText = o;
+        b.onclick = () => check(o, b); opts.appendChild(b);
+    });
+    document.getElementById('feedback').style.display = 'none';
+    document.getElementById('next-btn').style.display = 'none';
+}
+function check(choice, b) {
+    let q = qList[cIdx]; let f = document.getElementById('feedback');
+    if(choice === q.a) { score++; b.classList.add('correct'); f.innerHTML = "✅ <b>Correct!</b><br>Page " + q.p + ": " + q.i; }
+    else { b.classList.add('wrong'); f.innerHTML = "❌ <b>Wrong!</b><br>Page " + q.p + ": " + q.i; }
+    f.style.display = 'block'; document.getElementById('next-btn').style.display = 'block';
+    document.getElementById('score').innerText = `النتيجة: ${score}`;
+    Array.from(document.querySelectorAll('.options button')).forEach(btn => btn.disabled = true);
+}
+function nextQ() { 
+    cIdx++; 
+    if(cIdx < 35) render(); 
+    else document.getElementById('quiz-container').innerHTML = `<h2>انتهى اختبار Lab 11!</h2><h3>الدرجة النهائية: ${score}/35</h3><button onclick="location.reload()" style="padding:15px; border-radius:15px; border:none; background:var(--accent); color:white; cursor:pointer; width:100%;">إعادة المحاولة</button>`;
+}
+start();
+</script>
+</body>
+</html>

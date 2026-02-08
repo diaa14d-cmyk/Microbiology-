@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار Lab 5 - Antibiotic Sensitivity</title>
+    <style>
+        :root { --main: #ff7675; --accent: #6c5ce7; --success: #00b894; --bg: #f7f1e3; }
+        body { font-family: 'Segoe UI', Tahoma; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        #quiz-container { background: white; width: 90%; max-width: 550px; padding: 30px; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); text-align: center; position: relative; border-top: 10px solid var(--main); }
+        .score-info { display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: bold; color: var(--accent); font-size: 1.1rem; }
+        .q-text { font-size: 1.25rem; color: #2d3436; margin: 25px 0; direction: ltr; line-height: 1.4; min-height: 50px; text-align: left; }
+        .options { display: grid; gap: 12px; }
+        button { padding: 15px; border: 2px solid #fab1a0; border-radius: 15px; background: white; cursor: pointer; transition: 0.3s; font-size: 1rem; direction: ltr; font-weight: bold; color: #444; }
+        button:hover:not(:disabled) { background: #ffeaa7; transform: scale(1.02); }
+        .correct { background: var(--success) !important; color: white; border-color: #55efc4; }
+        .wrong { background: #d63031 !important; color: white; border-color: #ff7675; }
+        #feedback { margin-top: 20px; padding: 15px; border-radius: 15px; display: none; text-align: left; direction: ltr; font-size: 0.9rem; background: #dfe6e9; border-left: 5px solid var(--accent); line-height: 1.4; }
+        #next-btn { margin-top: 25px; background: var(--accent); color: white; border: none; padding: 15px 40px; border-radius: 50px; cursor: pointer; display: none; font-size: 1.1rem; width: 100%; box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3); }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <div class="score-info">
+        <div id="score">النتيجة: 0</div>
+        <div id="progress">1 / 35</div>
+    </div>
+    <div id="question-area">
+        <div class="q-text" id="q-text"></div>
+        <div class="options" id="options"></div>
+    </div>
+    <div id="feedback"></div>
+    <button id="next-btn" onclick="nextQ()">السؤال التالي ➔</button>
+</div>
+
+<script>
+const lab5Data = [
+    {q: "Which term describes a drug that kills bacteria?", a: "Bactericidal", o: ["Bactericidal", "Bacteriostatic", "Beta-lactamase"], p: 11, i: "Bactericidal: A drug that is able to kill bacteria."},
+    {q: "Bacteriostatic drugs kill the bacteria directly.", a: "False", o: ["True", "False"], p: 11, i: "Bacteriostatic: A drug that is able to inhibit bacterial multiplication, not kill directly."},
+    {q: "What is the common name for the antibiotic sensitivity test?", a: "Kirby-Bauer test", o: ["Gram stain", "Kirby-Bauer test", "Catalase test"], p: 11, i: "Antibiotic sensitivity test (Kirby-Bauer test)."},
+    {q: "Which specific agar is used for sensitivity testing?", a: "Muller-Hinton agar", o: ["Blood agar", "MacConkey agar", "Muller-Hinton agar"], p: 11, i: "Procedure: 1. Preparation of Muller-Hinton agar."},
+    {q: "The microorganism is not inhibited by the drug when it is:", a: "Resistant", o: ["Sensitive", "Intermediate", "Resistant"], p: 11, i: "Resistant: The micro-organism is not inhibited by the drug."},
+    {q: "Sensitive means the microorganism is inhibited by the drug.", a: "True", o: ["True", "False"], p: 11, i: "Sensitive: The micro-organism is inhibited by the drug."},
+    {q: "How do Staphylococci resist penicillin?", a: "Producing β-lactamase", o: ["Thick cell wall", "Producing β-lactamase", "Fast growth"], p: 11, i: "Staphylococci are resistant to penicillin because they produce a β-lactamase."},
+    {q: "β-lactamase destroys the penicillin drug.", a: "True", o: ["True", "False"], p: 11, i: "β-lactamase that destroys the drug."},
+    {q: "The zone of inhibition is measured in which unit?", a: "Millimeters (mm)", o: ["Centimeters (cm)", "Millimeters (mm)", "Inches"], p: 11, i: "The diameter of the zone of inhibition... is measured in millimeters."},
+    {q: "What is the incubation temperature for the Kirby-Bauer test?", a: "37 °C", o: ["25 °C", "37 °C", "42 °C"], p: 11, i: "Procedure: 4. Incubate the plates at 37 °C for 24 hours."},
+    {q: "Standard incubation time for this test is 48 hours.", a: "False", o: ["True", "False"], p: 11, i: "The procedure specifies 24 hours."},
+    {q: "A sterile cotton swab is used to spread bacteria on agar.", a: "True", o: ["True", "False"], p: 11, i: "Inoculate the surface... by using a sterile cotton swab."},
+    {q: "Forceps are used to place antibiotic disks on the agar.", a: "True", o: ["True", "False"], p: 11, i: "Procedure: 3. Place the antibiotic disks by using forceps."},
+    {q: "The clear area around the antibiotic disk where no growth occurs is:", a: "Zone of inhibition", o: ["Growth zone", "Zone of inhibition", "Dead zone"], p: 11, i: "The diameter of the zone of inhibition around each disk is measured."},
+    {q: "If there is no zone of inhibition, the bacteria is resistant.", a: "True", o: ["True", "False"], p: 11, i: "No zone means growth was not inhibited, indicating resistance."},
+    {q: "Which of these is a bactericidal drug mentioned in Lab 5?", a: "Penicillin", o: ["Penicillin", "None of these", "Staphylococci"], p: 11, i: "Penicillin is the drug discussed regarding bactericidal destruction by enzymes."},
+    {q: "The sensitivity test helps doctors choose the right treatment.", a: "True", o: ["True", "False"], p: 11, i: "Aim: To determine the sensitivity... to help select the effective drug."},
+    {q: "Muller-Hinton agar is poured into:", a: "Petri dishes", o: ["Test tubes", "Petri dishes", "Beakers"], p: 11, i: "Procedure: Pour into petri dishes and allow to solidify."},
+    {q: "Intermediate resistance is a category between S and R.", a: "True", o: ["True", "False"], p: 11, i: "Results are compared to tables and categorized (S, I, R)."},
+    {q: "Bacteriostatic agents 'inhibit multiplication'.", a: "True", o: ["True", "False"], p: 11, i: "Bacteriostatic: A drug that is able to inhibit bacterial multiplication."},
+    {q: "β-lactamase is an enzyme.", a: "True", o: ["True", "False"], p: 11, i: "Yes, it is an enzyme that destroys the drug molecule."},
+    {q: "Disk diffusion is the principle of the Kirby-Bauer test.", a: "True", o: ["True", "False"], p: 11, i: "The method involves the diffusion of antibiotic from a disk into the agar."},
+    {q: "The inoculation must cover the whole surface of the plate.", a: "True", o: ["True", "False"], p: 11, i: "This ensures 'confluent growth' to clearly see inhibition zones."},
+    {q: "Can Staphylococci be resistant to Penicillin?", a: "Yes", o: ["Yes", "No"], p: 11, i: "Yes, as stated in the manual due to beta-lactamase."},
+    {q: "A drug that inhibits growth but doesn't kill is:", a: "Bacteriostatic", o: ["Bactericidal", "Bacteriostatic", "Sterilizer"], p: 11, i: "Definition: Bacteriostatic inhibits multiplication."},
+    {q: "The measurement should include the diameter of the disk.", a: "True", o: ["True", "False"], p: 11, i: "The diameter of the zone (including the disk) is measured."},
+    {q: "If the zone of inhibition is large, the bacteria is likely:", a: "Sensitive", o: ["Resistant", "Sensitive", "Neutral"], p: 11, i: "Generally, larger zones indicate sensitivity, though values must be checked against a table."},
+    {q: "Is it okay to use a non-sterile swab for inoculation?", a: "False", o: ["True", "False"], p: 11, i: "Must be a 'sterile cotton swab' to avoid contamination."},
+    {q: "Antibiotics are only effective against bacteria.", a: "True", o: ["True", "False"], p: 11, i: "Lab 5 discusses bacterial sensitivity to antibiotics."},
+    {q: "Beta-lactamase is produced by 'all' bacteria.", a: "False", o: ["True", "False"], p: 11, i: "No, 'some' bacteria like Staphylococci produce it."},
+    {q: "The Petri dish should be incubated upside down.", a: "True", o: ["True", "False"], p: 11, i: "General microbiology rule for incubation (though not explicitly in this specific text, it is the standard procedure)."},
+    {q: "Is 24 hours the typical incubation time?", a: "Yes", o: ["Yes", "No"], p: 11, i: "Procedure: 4. Incubate... for 24 hours."},
+    {q: "Does the drug diffuse from the disk into the agar?", a: "Yes", o: ["Yes", "No"], p: 11, i: "This is the core principle of the Kirby-Bauer method."},
+    {q: "Which unit is 1/10th of a centimeter?", a: "Millimeter", o: ["Millimeter", "Micron", "Meter"], p: 11, i: "We measure in mm (1 cm = 10 mm)."},
+    {q: "Solidifying the agar is the first step.", a: "True", o: ["True", "False"], p: 11, i: "Procedure: 1. Preparation... allow to solidify."}
+];
+
+let qList = [], cIdx = 0, score = 0;
+function start() { qList = lab5Data.sort(() => Math.random() - 0.5); render(); }
+function render() {
+    let q = qList[cIdx];
+    document.getElementById('q-text').innerText = q.q;
+    document.getElementById('progress').innerText = `${cIdx + 1} / 35`;
+    let opts = document.getElementById('options'); opts.innerHTML = '';
+    q.o.forEach(o => {
+        let b = document.createElement('button'); b.innerText = o;
+        b.onclick = () => check(o, b); opts.appendChild(b);
+    });
+    document.getElementById('feedback').style.display = 'none';
+    document.getElementById('next-btn').style.display = 'none';
+}
+function check(choice, b) {
+    let q = qList[cIdx]; let f = document.getElementById('feedback');
+    if(choice === q.a) { score++; b.classList.add('correct'); f.innerHTML = "✅ <b>Correct!</b><br>Page " + q.p + ": " + q.i; }
+    else { b.classList.add('wrong'); f.innerHTML = "❌ <b>Wrong!</b><br>Page " + q.p + ": " + q.i; }
+    f.style.display = 'block'; document.getElementById('next-btn').style.display = 'block';
+    document.getElementById('score').innerText = `النتيجة: ${score}`;
+    Array.from(document.querySelectorAll('.options button')).forEach(btn => btn.disabled = true);
+}
+function nextQ() { 
+    cIdx++; 
+    if(cIdx < 35) render(); 
+    else document.getElementById('quiz-container').innerHTML = `<h2>انتهى الاختبار!</h2><h3>الدرجة النهائية: ${score}/35</h3><button onclick="location.reload()" style="padding:15px; border-radius:15px; border:none; background:var(--accent); color:white; cursor:pointer; width:100%;">إعادة المحاولة</button>`;
+}
+start();
+</script>
+</body>
+</html>

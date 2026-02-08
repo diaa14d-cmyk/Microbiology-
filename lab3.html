@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار Lab 3 - تحضير المسحة</title>
+    <style>
+        :root { --main: #ff7675; --accent: #6c5ce7; --success: #00b894; --bg: #f7f1e3; }
+        body { font-family: 'Segoe UI', Tahoma; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        #quiz-container { background: white; width: 90%; max-width: 550px; padding: 30px; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); text-align: center; position: relative; border-top: 10px solid var(--main); }
+        .score-info { display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: bold; color: var(--accent); font-size: 1.1rem; }
+        .q-text { font-size: 1.25rem; color: #2d3436; margin: 25px 0; direction: ltr; line-height: 1.4; min-height: 50px; }
+        .options { display: grid; gap: 12px; }
+        button { padding: 15px; border: 2px solid #fab1a0; border-radius: 15px; background: white; cursor: pointer; transition: 0.3s; font-size: 1rem; direction: ltr; font-weight: bold; color: #444; }
+        button:hover { background: #ffeaa7; transform: scale(1.02); }
+        .correct { background: var(--success) !important; color: white; border-color: #55efc4; }
+        .wrong { background: #d63031 !important; color: white; border-color: #ff7675; }
+        #feedback { margin-top: 20px; padding: 15px; border-radius: 15px; display: none; text-align: left; direction: ltr; font-size: 0.9rem; background: #dfe6e9; border-left: 5px solid var(--accent); }
+        #next-btn { margin-top: 25px; background: var(--accent); color: white; border: none; padding: 15px 40px; border-radius: 50px; cursor: pointer; display: none; font-size: 1.1rem; width: 100%; box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3); }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <div class="score-info">
+        <div id="score">النتيجة: 0</div>
+        <div id="progress">1 / 35</div>
+    </div>
+    <div id="question-area">
+        <div class="q-text" id="q-text"></div>
+        <div class="options" id="options"></div>
+    </div>
+    <div id="feedback"></div>
+    <button id="next-btn" onclick="nextQ()">السؤال التالي ➔</button>
+</div>
+
+<script>
+const lab3Data = [
+    {q: "A Smear is a specimen for microscopic examination.", a: "True", o: ["True", "False"], p: 7, i: "Definition: A smear is a specimen for microscopic examination prepared by spreading material across a glass slide."},
+    {q: "Sputum is an example of fluid material for a smear.", a: "True", o: ["True", "False"], p: 7, i: "Fluid material include broth culture, urine, sputum, and pus."},
+    {q: "Solid materials include growth on agar media.", a: "True", o: ["True", "False"], p: 7, i: "Solid material include growth on agar media or tissue samples."},
+    {q: "You must use a dirty slide for smear preparation.", a: "False", o: ["True", "False"], p: 8, i: "Clean slide is essential: use a clean, grease-free slide."},
+    {q: "The loop should be sterilized before and after use.", a: "True", o: ["True", "False"], p: 8, i: "Always sterilize the loop in the flame to avoid contamination."},
+    {q: "When using solid material, add a drop of water first.", a: "True", o: ["True", "False"], p: 8, i: "Place a loopful of clean water on the center of the slide for solid specimens."},
+    {q: "Smears should be air-dried before fixation.", a: "True", o: ["True", "False"], p: 8, i: "Step 3: Allow the smear to air dry."},
+    {q: "Fixation is done by heating the slide until it glows.", a: "False", o: ["True", "False"], p: 8, i: "Pass the slide through the flame 3-4 times; do not overheat."},
+    {q: "Fixation makes the bacteria stick to the slide.", a: "True", o: ["True", "False"], p: 8, i: "Aim of Fixation: Attach the bacteria on the slide."},
+    {q: "Fixation prevents the smear from being washed away.", a: "True", o: ["True", "False"], p: 8, i: "Aim: It prevents the smear from being washed away during staining."},
+    {q: "Fixation kills the microorganisms.", a: "True", o: ["True", "False"], p: 8, i: "Aim of Fixation: 1-Kill the micro-organism."},
+    {q: "Bacteria must be alive during the staining process.", a: "False", o: ["True", "False"], p: 8, i: "Fixation kills them to make staining safer and more effective."},
+    {q: "A thin smear is better than a thick one.", a: "True", o: ["True", "False"], p: 8, i: "A good smear should be thin enough to see through clearly."},
+    {q: "The slide should be passed through the flame 10 times.", a: "False", o: ["True", "False"], p: 8, i: "The manual says (3-4) times."},
+    {q: "Pus is considered a solid material in lab 3.", a: "False", o: ["True", "False"], p: 7, i: "Pus is listed under fluid materials."},
+    {q: "Microscopic examination requires a prepared smear.", a: "True", o: ["True", "False"], p: 7, i: "A smear is specifically for microscopic examination."},
+    {q: "Grease on a slide helps the smear stay on.", a: "False", o: ["True", "False"], p: 8, i: "Slides must be grease-free for proper adherence."},
+    {q: "The loopful of water is needed for broth cultures.", a: "False", o: ["True", "False"], p: 8, i: "Broth (fluid) is already liquid, water is only for solid material."},
+    {q: "Fixation preserves the internal structures of cells.", a: "True", o: ["True", "False"], p: 8, i: "Fixation helps preserve the biological state of the cells."},
+    {q: "The smear must be completely dry before flaming.", a: "True", o: ["True", "False"], p: 8, i: "Always air dry before fixation to avoid cell distortion."},
+    {q: "Is it okay to blow on the smear to dry it faster?", a: "False", o: ["True", "False"], p: 8, i: "Air drying should happen naturally or far from heat; blowing causes contamination."},
+    {q: "The film is the same as the smear.", a: "True", o: ["True", "False"], p: 8, i: "The text uses 'film' and 'smear' interchangeably."},
+    {q: "Fixation makes cells more permeable to dyes.", a: "True", o: ["True", "False"], p: 8, i: "Chemical/Heat changes in the cell wall allow dye penetration."},
+    {q: "You use a scalpel to spread the smear.", a: "False", o: ["True", "False"], p: 8, i: "A loop or needle is typically used."},
+    {q: "Staining is done immediately after flaming.", a: "True", o: ["True", "False"], p: 8, i: "Once fixed, the slide is ready for staining."},
+    {q: "Urine is a common fluid specimen.", a: "True", o: ["True", "False"], p: 7, i: "Listed as fluid material."},
+    {q: "Gram staining requires a fixed smear.", a: "True", o: ["True", "False"], p: 8, i: "All bacterial stains generally start with a fixed smear."},
+    {q: "Can you use a needle to prepare a smear from agar?", a: "True", o: ["True", "False"], p: 8, i: "A needle or loop can pick up a colony from agar."},
+    {q: "The loop is held like a pen.", a: "True", o: ["True", "False"], p: 8, i: "Standard lab practice for control."},
+    {q: "Overheating the slide during fixation can char cells.", a: "True", o: ["True", "False"], p: 8, i: "Excessive heat distorts bacterial morphology."},
+    {q: "Tissues are solid materials.", a: "True", o: ["True", "False"], p: 7, i: "Listed: Solid material such as growth on agar media or tissue."},
+    {q: "Broth culture is a solid material.", a: "False", o: ["True", "False"], p: 7, i: "Broth is a liquid (fluid) material."},
+    {q: "A smear should cover the whole slide edge to edge.", a: "False", o: ["True", "False"], p: 8, i: "It is usually placed in the center."},
+    {q: "The slide should be labeled after staining.", a: "False", o: ["True", "False"], p: 1, i: "General rule: Labels should be read and applied carefully early."},
+    {q: "The film must be fixed before adding reagents.", a: "True", o: ["True", "False"], p: 8, i: "Fixation is a mandatory step before staining."}
+];
+
+let qList = [], cIdx = 0, score = 0;
+function start() { qList = lab3Data.sort(() => Math.random() - 0.5); render(); }
+function render() {
+    let q = qList[cIdx];
+    document.getElementById('q-text').innerText = q.q;
+    document.getElementById('progress').innerText = `${cIdx + 1} / 35`;
+    let opts = document.getElementById('options'); opts.innerHTML = '';
+    q.o.forEach(o => {
+        let b = document.createElement('button'); b.innerText = o;
+        b.onclick = () => check(o, b); opts.appendChild(b);
+    });
+    document.getElementById('feedback').style.display = 'none';
+    document.getElementById('next-btn').style.display = 'none';
+}
+function check(choice, b) {
+    let q = qList[cIdx]; let f = document.getElementById('feedback');
+    if(choice === q.a) { score++; b.classList.add('correct'); f.innerHTML = "✅ <b>Correct!</b><br>Page " + q.p + ": " + q.i; }
+    else { b.classList.add('wrong'); f.innerHTML = "❌ <b>Wrong!</b><br>Page " + q.p + ": " + q.i; }
+    f.style.display = 'block'; document.getElementById('next-btn').style.display = 'block';
+    document.getElementById('score').innerText = `النتيجة: ${score}`;
+    Array.from(document.querySelectorAll('.options button')).forEach(btn => btn.disabled = true);
+}
+function nextQ() { 
+    cIdx++; 
+    if(cIdx < 35) render(); 
+    else document.getElementById('quiz-container').innerHTML = `<h2>انتهى الاختبار!</h2><h3>الدرجة النهائية: ${score}/35</h3><button onclick="location.reload()">إعادة المحاولة</button>`;
+}
+start();
+</script>
+</body>
+</html>

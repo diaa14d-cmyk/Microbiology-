@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار Lab 6 - Biochemical Tests</title>
+    <style>
+        :root { --main: #ff7675; --accent: #6c5ce7; --success: #00b894; --bg: #f7f1e3; }
+        body { font-family: 'Segoe UI', Tahoma; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        #quiz-container { background: white; width: 90%; max-width: 550px; padding: 30px; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); text-align: center; position: relative; border-top: 10px solid var(--main); }
+        .score-info { display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: bold; color: var(--accent); font-size: 1.1rem; }
+        .q-text { font-size: 1.25rem; color: #2d3436; margin: 25px 0; direction: ltr; line-height: 1.4; min-height: 50px; text-align: left; }
+        .options { display: grid; gap: 12px; }
+        button { padding: 15px; border: 2px solid #fab1a0; border-radius: 15px; background: white; cursor: pointer; transition: 0.3s; font-size: 1rem; direction: ltr; font-weight: bold; color: #444; }
+        button:hover:not(:disabled) { background: #ffeaa7; transform: scale(1.02); }
+        .correct { background: var(--success) !important; color: white; border-color: #55efc4; }
+        .wrong { background: #d63031 !important; color: white; border-color: #ff7675; }
+        #feedback { margin-top: 20px; padding: 15px; border-radius: 15px; display: none; text-align: left; direction: ltr; font-size: 0.9rem; background: #dfe6e9; border-left: 5px solid var(--accent); line-height: 1.4; }
+        #next-btn { margin-top: 25px; background: var(--accent); color: white; border: none; padding: 15px 40px; border-radius: 50px; cursor: pointer; display: none; font-size: 1.1rem; width: 100%; box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3); }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <div class="score-info">
+        <div id="score">النتيجة: 0</div>
+        <div id="progress">1 / 35</div>
+    </div>
+    <div id="question-area">
+        <div class="q-text" id="q-text"></div>
+        <div class="options" id="options"></div>
+    </div>
+    <div id="feedback"></div>
+    <button id="next-btn" onclick="nextQ()">السؤال التالي ➔</button>
+</div>
+
+<script>
+const lab6Data = [
+    {q: "Which test is used to differentiate Staphylococci (+) from Streptococci (-)?", a: "Catalase test", o: ["Catalase test", "Coagulase test", "Oxidase test"], p: 12, i: "Catalase test: used in differentiation of staphylococci (positive) from streptococci (negative)."},
+    {q: "The Catalase enzyme acts on Hydrogen peroxide (H2O2).", a: "True", o: ["True", "False"], p: 12, i: "Catalase test: The enzyme catalase acts on hydrogen peroxide."},
+    {q: "In a positive Catalase test, what is released?", a: "Oxygen bubbles", o: ["Carbon dioxide", "Oxygen bubbles", "Hydrogen gas"], p: 12, i: "Positive Catalase: Oxygen is released (bubbles)."},
+    {q: "The Coagulase test differentiates S. aureus from other Staphylococci.", a: "True", o: ["True", "False"], p: 12, i: "Coagulase test: used to differentiate Staphylococcus aureus from other staphylococci."},
+    {q: "S. aureus is Coagulase negative.", a: "False", o: ["True", "False"], p: 12, i: "S. aureus is coagulase positive, while other staphylococci are coagulase negative."},
+    {q: "What is the positive result of a Coagulase test?", a: "Clot formation", o: ["Bubbles", "Clot formation", "Yellow color"], p: 12, i: "Positive Coagulase result is clot formation in the plasma."},
+    {q: "Indole production test identifies organisms that produce which enzyme?", a: "Tryptophanase", o: ["Catalase", "Tryptophanase", "Oxidase"], p: 12, i: "Indole test: used to identify organisms that produce the enzyme tryptophanase."},
+    {q: "Which reagent is used in the Indole production test?", a: "Kovac's reagent", o: ["Kovac's reagent", "Hydrogen peroxide", "Crystal violet"], p: 12, i: "The enzyme breaks down tryptophan... Kovac's reagent is added to detect indole."},
+    {q: "A positive Indole test produces a red ring.", a: "True", o: ["True", "False"], p: 12, i: "Positive Indole test: development of a red ring."},
+    {q: "Oxidase test detects the presence of Cytochrome oxidase.", a: "True", o: ["True", "False"], p: 12, i: "Oxidase test: determines if an organism possesses cytochrome oxidase."},
+    {q: "Enterobacteriaceae are all Oxidase-positive.", a: "False", o: ["True", "False"], p: 13, i: "Enterobacteriaceae: None have cytochrome oxidase (they are oxidase-negative)."},
+    {q: "Oxidase test is used to identify Neisseria and Pseudomonas.", a: "True", o: ["True", "False"], p: 13, i: "Oxidase test is used to identify Neisseria and Pseudomonas (positive)."},
+    {q: "A positive Oxidase test results in which color?", a: "Dark purple/blue", o: ["Yellow", "Red", "Dark purple/blue"], p: 13, i: "Positive Oxidase: The color changes to dark purple or blue."},
+    {q: "Urease test is used to identify Proteus.", a: "True", o: ["True", "False"], p: 13, i: "Urease test: used to identify Proteus (urease-positive)."},
+    {q: "The Urease enzyme breaks down urea into ammonia and CO2.", a: "True", o: ["True", "False"], p: 13, i: "Urease: enzyme that breaks down urea to give ammonia and CO2."},
+    {q: "Positive Urease test turns the medium pink.", a: "True", o: ["True", "False"], p: 13, i: "Positive Urease: The medium turns to pink color."},
+    {q: "Gram-Positive bacteria have a thin peptidoglycan layer.", a: "False", o: ["True", "False"], p: 13, i: "Gram Positive: Peptidoglycan layer is thick and multi-layered."},
+    {q: "Gram-Negative bacteria have an Outer Membrane.", a: "True", o: ["True", "False"], p: 13, i: "Gram Negative: Outer membrane is present."},
+    {q: "Periplasmic space is present in Gram-Positive bacteria.", a: "False", o: ["True", "False"], p: 13, i: "Periplasmic space is present in Gram Negative, absent in Gram Positive."},
+    {q: "Teichoic acid is present in Gram-Negative bacteria.", a: "False", o: ["True", "False"], p: 13, i: "Teichoic acid is present in many Gram Positive, absent in Gram Negative."},
+    {q: "Enterobacteriaceae are Gram-Negative rods.", a: "True", o: ["True", "False"], p: 13, i: "Enterobacteriaceae: Gram-negative rods."},
+    {q: "All Enterobacteriaceae are non-spore-forming.", a: "True", o: ["True", "False"], p: 13, i: "General Characteristics: Non-spore-forming."},
+    {q: "Staphylococci are Catalase positive.", a: "True", o: ["True", "False"], p: 12, i: "As mentioned in differentiation from streptococci."},
+    {q: "Is Streptococcus Catalase positive?", a: "No", o: ["Yes", "No"], p: 12, i: "Streptococci are catalase negative."},
+    {q: "What is used to perform the Catalase test?", a: "3% H2O2", o: ["3% H2O2", "Urea broth", "Kovac's reagent"], p: 12, i: "Procedure involves adding 3% hydrogen peroxide."},
+    {q: "The Coagulase test uses Citrated plasma.", a: "True", o: ["True", "False"], p: 12, i: "Procedure: add colony to 0.5 ml of citrated plasma."},
+    {q: "How long is the Coagulase test incubated?", a: "4 hours", o: ["24 hours", "4 hours", "10 minutes"], p: 12, i: "Coagulase: Incubate at 37°C for 4 hours."},
+    {q: "Indole is produced from the amino acid Tryptophan.", a: "True", o: ["True", "False"], p: 12, i: "The enzyme tryptophanase breaks down the amino acid tryptophan."},
+    {q: "The Oxidase test must be read within 10-30 seconds.", a: "True", o: ["True", "False"], p: 13, i: "Standard oxidase test procedure requires rapid reading."},
+    {q: "Proteus is a well-known Urease positive organism.", a: "True", o: ["True", "False"], p: 13, i: "Urease test: used to identify Proteus."},
+    {q: "Lipopolysaccharide (LPS) is found in Gram-Negative walls.", a: "True", o: ["True", "False"], p: 13, i: "LPS is a key component of the Gram-negative outer membrane."},
+    {q: "Gram-Negative bacteria are more resistant to certain antibiotics.", a: "True", o: ["True", "False"], p: 13, i: "Due to the outer membrane and thin peptidoglycan structure."},
+    {q: "A yellow ring in the Indole test means it is positive.", a: "False", o: ["True", "False"], p: 12, i: "No, a red ring is positive. Yellow/No change is negative."},
+    {q: "In the Urease test, ammonia makes the medium acidic.", a: "False", o: ["True", "False"], p: 13, i: "Ammonia makes the medium alkaline (basic), which changes the indicator color."},
+    {q: "Enterobacteriaceae are often found in the intestinal tract.", a: "True", o: ["True", "False"], p: 13, i: "They are a large family of bacteria commonly associated with the gut."}
+];
+
+let qList = [], cIdx = 0, score = 0;
+function start() { qList = lab6Data.sort(() => Math.random() - 0.5); render(); }
+function render() {
+    let q = qList[cIdx];
+    document.getElementById('q-text').innerText = q.q;
+    document.getElementById('progress').innerText = `${cIdx + 1} / 35`;
+    let opts = document.getElementById('options'); opts.innerHTML = '';
+    q.o.forEach(o => {
+        let b = document.createElement('button'); b.innerText = o;
+        b.onclick = () => check(o, b); opts.appendChild(b);
+    });
+    document.getElementById('feedback').style.display = 'none';
+    document.getElementById('next-btn').style.display = 'none';
+}
+function check(choice, b) {
+    let q = qList[cIdx]; let f = document.getElementById('feedback');
+    if(choice === q.a) { score++; b.classList.add('correct'); f.innerHTML = "✅ <b>Correct!</b><br>Page " + q.p + ": " + q.i; }
+    else { b.classList.add('wrong'); f.innerHTML = "❌ <b>Wrong!</b><br>Page " + q.p + ": " + q.i; }
+    f.style.display = 'block'; document.getElementById('next-btn').style.display = 'block';
+    document.getElementById('score').innerText = `النتيجة: ${score}`;
+    Array.from(document.querySelectorAll('.options button')).forEach(btn => btn.disabled = true);
+}
+function nextQ() { 
+    cIdx++; 
+    if(cIdx < 35) render(); 
+    else document.getElementById('quiz-container').innerHTML = `<h2>انتهى الاختبار!</h2><h3>الدرجة النهائية: ${score}/35</h3><button onclick="location.reload()" style="padding:15px; border-radius:15px; border:none; background:var(--accent); color:white; cursor:pointer; width:100%;">إعادة المحاولة</button>`;
+}
+start();
+</script>
+</body>
+</html>

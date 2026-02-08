@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار Lab 8 - Gram-positive Bacteria</title>
+    <style>
+        :root { --main: #ff7675; --accent: #6c5ce7; --success: #00b894; --bg: #f7f1e3; }
+        body { font-family: 'Segoe UI', Tahoma; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        #quiz-container { background: white; width: 90%; max-width: 550px; padding: 30px; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); text-align: center; position: relative; border-top: 10px solid var(--main); }
+        .score-info { display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: bold; color: var(--accent); font-size: 1.1rem; }
+        .q-text { font-size: 1.25rem; color: #2d3436; margin: 25px 0; direction: ltr; line-height: 1.4; min-height: 50px; text-align: left; }
+        .options { display: grid; gap: 12px; }
+        button { padding: 15px; border: 2px solid #fab1a0; border-radius: 15px; background: white; cursor: pointer; transition: 0.3s; font-size: 1rem; direction: ltr; font-weight: bold; color: #444; }
+        button:hover:not(:disabled) { background: #ffeaa7; transform: scale(1.02); }
+        .correct { background: var(--success) !important; color: white; border-color: #55efc4; }
+        .wrong { background: #d63031 !important; color: white; border-color: #ff7675; }
+        #feedback { margin-top: 20px; padding: 15px; border-radius: 15px; display: none; text-align: left; direction: ltr; font-size: 0.9rem; background: #dfe6e9; border-left: 5px solid var(--accent); line-height: 1.4; }
+        #next-btn { margin-top: 25px; background: var(--accent); color: white; border: none; padding: 15px 40px; border-radius: 50px; cursor: pointer; display: none; font-size: 1.1rem; width: 100%; box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3); }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <div class="score-info">
+        <div id="score">النتيجة: 0</div>
+        <div id="progress">1 / 35</div>
+    </div>
+    <div id="question-area">
+        <div class="q-text" id="q-text"></div>
+        <div class="options" id="options"></div>
+    </div>
+    <div id="feedback"></div>
+    <button id="next-btn" onclick="nextQ()">السؤال التالي ➔</button>
+</div>
+
+<script>
+const lab8Data = [
+    {q: "Staphylococci are Gram-positive cocci.", a: "True", o: ["True", "False"], p: 15, i: "Staphylococcus: 1. Gram-positive cocci."},
+    {q: "How are Staphylococci typically arranged?", a: "Irregular clusters like grape", o: ["Chains", "Pairs", "Irregular clusters like grape"], p: 15, i: "Staphylococcus: 2. arranged in irregular clusters like grape."},
+    {q: "Are Staphylococci motile?", a: "No", o: ["Yes", "No"], p: 15, i: "Staphylococcus: 3. Non motile and non-spore forming."},
+    {q: "Staphylococci form spores.", a: "False", o: ["True", "False"], p: 15, i: "Staphylococcus: 3. Non motile and non-spore forming."},
+    {q: "Where are Staphylococci commonly found?", a: "Skin and mucous membranes", o: ["Intestinal tract only", "Skin and mucous membranes", "Soil only"], p: 15, i: "Staphylococcus: 5. They are common inhabitants of the skin and mucous membranes."},
+    {q: "Which Staph species causes abscesses and boils?", a: "Staphylococcus aureus", o: ["Staphylococcus aureus", "S. epidermidis", "S. saprophyticus"], p: 15, i: "Medical importance: S. aureus causes abscess, boils, and wound infections."},
+    {q: "Streptococci are arranged in irregular clusters.", a: "False", o: ["True", "False"], p: 15, i: "Streptococcus: 2. arranged in chains (not clusters)."},
+    {q: "Streptococci are Gram-positive cocci.", a: "True", o: ["True", "False"], p: 15, i: "Streptococcus: 1. Gram-positive cocci."},
+    {q: "Are Streptococci catalase positive or negative?", a: "Catalase negative", o: ["Catalase positive", "Catalase negative"], p: 15, i: "Streptococcus: 4. All streptococci are catalase negative."},
+    {q: "Classification of Streptococcus is based on their action on:", a: "Blood agar", o: ["Nutrient agar", "Blood agar", "MacConkey agar"], p: 15, i: "Classification based on their action on blood agar (Hemolysis)."},
+    {q: "Which type of hemolysis forms a green zone around the colony?", a: "Alpha-Hemolysis (α)", o: ["Alpha-Hemolysis (α)", "Beta-Hemolysis (β)", "Gamma-Hemolysis (γ)"], p: 15, i: "α-Hemolysis (α): form a green zone around the colony."},
+    {q: "Beta-Hemolysis (β) results in a clear zone.", a: "True", o: ["True", "False"], p: 15, i: "β-Hemolysis (β): form a clear zone around the colony."},
+    {q: "What does Gamma-Hemolysis (γ) indicate?", a: "No hemolysis", o: ["Partial hemolysis", "Complete hemolysis", "No hemolysis"], p: 15, i: "γ-Hemolysis (γ): No hemolysis."},
+    {q: "Which bacterium causes a sore throat?", a: "Streptococcus pyogenes", o: ["Streptococcus pyogenes", "S. pneumoniae", "S. aureus"], p: 15, i: "Medical importance: Streptococcus pyogenes causes sore throat."},
+    {q: "Streptococcus pneumoniae is the causative agent of pneumonia.", a: "True", o: ["True", "False"], p: 15, i: "Medical importance: Streptococcus pneumoniae causes pneumonia."},
+    {q: "Staphylococci are non-motile.", a: "True", o: ["True", "False"], p: 15, i: "Staphylococcus: 3. Non motile."},
+    {q: "Streptococci are non-spore forming.", a: "True", o: ["True", "False"], p: 15, i: "Streptococcus: 3. non motile and non-spore forming."},
+    {q: "Alpha hemolysis is 'partial' hemolysis.", a: "True", o: ["True", "False"], p: 15, i: "It forms a green zone, which indicates partial breakdown of RBCs."},
+    {q: "Beta hemolysis is 'complete' hemolysis.", a: "True", o: ["True", "False"], p: 15, i: "It forms a clear zone, indicating complete breakdown of RBCs."},
+    {q: "S. aureus can cause wound infections.", a: "True", o: ["True", "False"], p: 15, i: "Medical importance of S. aureus includes wound infections."},
+    {q: "Which genus is arranged in chains?", a: "Streptococcus", o: ["Staphylococcus", "Streptococcus", "Vibrio"], p: 15, i: "Streptococcus: arranged in chains."},
+    {q: "Catalase test can differentiate between Staph and Strep.", a: "True", o: ["True", "False"], p: 15, i: "Staph is positive, Strep is negative (from Lab 6 and implied here)."},
+    {q: "Staphylococci are spherical (cocci).", a: "True", o: ["True", "False"], p: 15, i: "Staphylococcus: 1. Gram-positive cocci."},
+    {q: "Streptococci are spherical (cocci).", a: "True", o: ["True", "False"], p: 15, i: "Streptococcus: 1. Gram-positive cocci."},
+    {q: "Which type of hemolysis has no change on the agar?", a: "Gamma-Hemolysis (γ)", o: ["Alpha", "Beta", "Gamma-Hemolysis (γ)"], p: 15, i: "Gamma means no hemolysis/no change."},
+    {q: "Streptococcus pyogenes is a common cause of skin infections.", a: "True", o: ["True", "False"], p: 15, i: "S. pyogenes can cause various infections including sore throat and skin issues."},
+    {q: "Staphylococci and Streptococci are both Gram-positive.", a: "True", o: ["True", "False"], p: 15, i: "Correct, both appear purple after Gram staining."},
+    {q: "Are Streptococci motile?", a: "No", o: ["Yes", "No"], p: 15, i: "Streptococcus: 3. non motile."},
+    {q: "How many types of hemolysis are mentioned in Lab 8?", a: "Three", o: ["Two", "Three", "Four"], p: 15, i: "Alpha, Beta, and Gamma hemolysis."},
+    {q: "The term 'pyogenes' often refers to pus production.", a: "True", o: ["True", "False"], p: 15, i: "General medical terminology (Staph and Strep are pyogenic)."},
+    {q: "Abscesses are a characteristic infection of S. aureus.", a: "True", o: ["True", "False"], p: 15, i: "Medical importance: S. aureus causes abscess."},
+    {q: "In blood agar, which hemolysis looks clear/transparent?", a: "Beta", o: ["Alpha", "Beta", "Gamma"], p: 15, i: "β-Hemolysis (β): form a clear zone."},
+    {q: "Is Streptococcus pneumoniae a Gram-positive cocci?", a: "True", o: ["True", "False"], p: 15, i: "Yes, it belongs to the Streptococcus genus."},
+    {q: "Boils (Furuncular) are caused by Staph aureus.", a: "True", o: ["True", "False"], p: 15, i: "Medical importance: S. aureus causes boils."},
+    {q: "Microscopic arrangement is a key way to tell Staph from Strep.", a: "True", o: ["True", "False"], p: 15, i: "Clusters (Staph) vs Chains (Strep)."}
+];
+
+let qList = [], cIdx = 0, score = 0;
+function start() { qList = lab8Data.sort(() => Math.random() - 0.5); render(); }
+function render() {
+    let q = qList[cIdx];
+    document.getElementById('q-text').innerText = q.q;
+    document.getElementById('progress').innerText = `${cIdx + 1} / 35`;
+    let opts = document.getElementById('options'); opts.innerHTML = '';
+    q.o.forEach(o => {
+        let b = document.createElement('button'); b.innerText = o;
+        b.onclick = () => check(o, b); opts.appendChild(b);
+    });
+    document.getElementById('feedback').style.display = 'none';
+    document.getElementById('next-btn').style.display = 'none';
+}
+function check(choice, b) {
+    let q = qList[cIdx]; let f = document.getElementById('feedback');
+    if(choice === q.a) { score++; b.classList.add('correct'); f.innerHTML = "✅ <b>Correct!</b><br>Page " + q.p + ": " + q.i; }
+    else { b.classList.add('wrong'); f.innerHTML = "❌ <b>Wrong!</b><br>Page " + q.p + ": " + q.i; }
+    f.style.display = 'block'; document.getElementById('next-btn').style.display = 'block';
+    document.getElementById('score').innerText = `النتيجة: ${score}`;
+    Array.from(document.querySelectorAll('.options button')).forEach(btn => btn.disabled = true);
+}
+function nextQ() { 
+    cIdx++; 
+    if(cIdx < 35) render(); 
+    else document.getElementById('quiz-container').innerHTML = `<h2>أحسنت!</h2><h3>لقد أتقنت Lab 8</h3><h3>درجتك النهائية: ${score}/35</h3><button onclick="location.reload()" style="padding:15px; border-radius:15px; border:none; background:var(--accent); color:white; cursor:pointer; width:100%;">إعادة الاختبار</button>`;
+}
+start();
+</script>
+</body>
+</html>

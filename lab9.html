@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار Lab 9 - Spore Stain & Clostridium</title>
+    <style>
+        :root { --main: #ff7675; --accent: #6c5ce7; --success: #00b894; --bg: #f7f1e3; }
+        body { font-family: 'Segoe UI', Tahoma; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        #quiz-container { background: white; width: 90%; max-width: 550px; padding: 30px; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); text-align: center; position: relative; border-top: 10px solid var(--main); }
+        .score-info { display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: bold; color: var(--accent); font-size: 1.1rem; }
+        .q-text { font-size: 1.25rem; color: #2d3436; margin: 25px 0; direction: ltr; line-height: 1.4; min-height: 50px; text-align: left; }
+        .options { display: grid; gap: 12px; }
+        button { padding: 15px; border: 2px solid #fab1a0; border-radius: 15px; background: white; cursor: pointer; transition: 0.3s; font-size: 1rem; direction: ltr; font-weight: bold; color: #444; }
+        button:hover:not(:disabled) { background: #ffeaa7; transform: scale(1.02); }
+        .correct { background: var(--success) !important; color: white; border-color: #55efc4; }
+        .wrong { background: #d63031 !important; color: white; border-color: #ff7675; }
+        #feedback { margin-top: 20px; padding: 15px; border-radius: 15px; display: none; text-align: left; direction: ltr; font-size: 0.9rem; background: #dfe6e9; border-left: 5px solid var(--accent); line-height: 1.4; }
+        #next-btn { margin-top: 25px; background: var(--accent); color: white; border: none; padding: 15px 40px; border-radius: 50px; cursor: pointer; display: none; font-size: 1.1rem; width: 100%; box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3); }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <div class="score-info">
+        <div id="score">النتيجة: 0</div>
+        <div id="progress">1 / 35</div>
+    </div>
+    <div id="question-area">
+        <div class="q-text" id="q-text"></div>
+        <div class="options" id="options"></div>
+    </div>
+    <div id="feedback"></div>
+    <button id="next-btn" onclick="nextQ()">السؤال التالي ➔</button>
+</div>
+
+<script>
+const lab9Data = [
+    {q: "What are endospores?", a: "Highly resistant resting stages", o: ["Active reproductive cells", "Highly resistant resting stages", "Type of flagella"], p: 16, i: "Endospores are small, highly resistant resting stages."},
+    {q: "Which two genera are known for producing endospores?", a: "Bacillus and Clostridium", o: ["Staphylococcus and Streptococcus", "Bacillus and Clostridium", "E. coli and Proteus"], p: 16, i: "Endospores are produced by Bacillus and Clostridium species."},
+    {q: "Endospores are resistant to heat, drying, and many chemicals.", a: "True", o: ["True", "False"], p: 16, i: "They are highly resistant to heat, drying, and many chemicals."},
+    {q: "What is the primary stain in the spore staining method?", a: "Malachite green", o: ["Crystal violet", "Safranin", "Malachite green"], p: 16, i: "Reagents: 1. Malachite green (Primary stain)."},
+    {q: "What is the counterstain used in spore staining?", a: "Safranin", o: ["Iodine", "Safranin", "Malachite green"], p: 16, i: "Reagents: 2. Safranin (Counter stain)."},
+    {q: "What is the role of steam in the spore staining procedure?", a: "To allow stain to penetrate the spore coat", o: ["To kill the vegetative cells", "To allow stain to penetrate the spore coat", "To fix the bacteria to the slide"], p: 16, i: "Procedure: Heat the slide with steam to allow Malachite green to penetrate the spore coat."},
+    {q: "How long should the slide be steamed during staining?", a: "5 minutes", o: ["1 minute", "5 minutes", "10 minutes"], p: 16, i: "Procedure step 2: Steam for about 5 minutes."},
+    {q: "After a successful spore stain, the spores appear red.", a: "False", o: ["True", "False"], p: 16, i: "Results: Spores are green, vegetative cells are red."},
+    {q: "What color do vegetative cells take in a spore stain?", a: "Red", o: ["Green", "Red", "Colorless"], p: 16, i: "Results: Vegetative cells are red (from Safranin)."},
+    {q: "Clostridium species are Gram-positive rods.", a: "True", o: ["True", "False"], p: 16, i: "General Characteristics: Clostridium are Gram-positive rods."},
+    {q: "What is the oxygen requirement for Clostridium?", a: "Obligate anaerobe", o: ["Obligate aerobe", "Obligate anaerobe", "Facultative anaerobe"], p: 16, i: "Characteristics: They are obligate anaerobes."},
+    {q: "Which bacterium causes Tetanus?", a: "Clostridium tetani", o: ["C. botulinum", "C. tetani", "C. perfringens"], p: 16, i: "Table: C. tetani causes Tetanus."},
+    {q: "C. botulinum is the causative agent of food poisoning.", a: "True", o: ["True", "False"], p: 16, i: "Table: C. botulinum causes Botulism (food poisoning)."},
+    {q: "What disease does Clostridium perfringens cause?", a: "Gas gangrene", o: ["Gas gangrene", "Tetanus", "Colitis"], p: 16, i: "Table: C. perfringens causes Gas gangrene."},
+    {q: "Pseudomembranous colitis is caused by C. difficile.", a: "True", o: ["True", "False"], p: 16, i: "Table: C. difficile causes Pseudomembranous colitis."},
+    {q: "Clostridium spores are often wider than the bacillus, causing it to bulge.", a: "True", o: ["True", "False"], p: 16, i: "Characteristics: Spores are often wider than the bacillus, bulging it."},
+    {q: "Are most Clostridium species motile?", a: "Yes", o: ["Yes", "No"], p: 16, i: "Most species are motile with peritrichous flagella."},
+    {q: "Where can Clostridium spores be found?", a: "Soil and intestinal tract", o: ["Only in treated water", "Soil and intestinal tract", "Only in the air"], p: 16, i: "Widely distributed in soil and the intestinal tract of humans and animals."},
+    {q: "Water is used as a decolorizer in the spore stain.", a: "True", o: ["True", "False"], p: 16, i: "Procedure step 3: Wash with water (removes Malachite green from vegetative cells)."},
+    {q: "Bacillus also forms spores but is usually aerobic.", a: "True", o: ["True", "False"], p: 16, i: "Endospores are produced by Bacillus (aerobes) and Clostridium (anaerobes)."},
+    {q: "For how long should the slide be washed with water?", a: "30 seconds", o: ["10 seconds", "30 seconds", "2 minutes"], p: 16, i: "Procedure step 3: Wash with water for 30 seconds."},
+    {q: "The counterstain (Safranin) is applied for how long?", a: "1 minute", o: ["30 seconds", "1 minute", "5 minutes"], p: 16, i: "Procedure step 4: Apply Safranin for 1 minute."},
+    {q: "Endospores are not for reproduction.", a: "True", o: ["True", "False"], p: 16, i: "They are resting stages for survival, not for multiplication."},
+    {q: "One bacteria cell usually produces many spores at once.", a: "False", o: ["True", "False"], p: 16, i: "Generally, one vegetative cell produces one endospore."},
+    {q: "C. tetani infection often results from deep puncture wounds.", a: "True", o: ["True", "False"], p: 16, i: "Common medical knowledge regarding Tetanus and anaerobes."},
+    {q: "Botulism is a form of severe food poisoning.", a: "True", o: ["True", "False"], p: 16, i: "Table: C. botulinum - Botulism (food poisoning)."},
+    {q: "C. perfringens is a Gram-positive rod.", a: "True", o: ["True", "False"], p: 16, i: "All Clostridium are Gram-positive rods."},
+    {q: "The spore stain is a differential stain.", a: "True", o: ["True", "False"], p: 16, i: "It differentiates spores (green) from vegetative cells (red)."},
+    {q: "What does 'obligate anaerobe' mean?", a: "Cannot grow in oxygen", o: ["Needs oxygen", "Cannot grow in oxygen", "Grows with or without oxygen"], p: 16, i: "They must grow in environments without oxygen."},
+    {q: "Malachite green stains the spore coat.", a: "True", o: ["True", "False"], p: 16, i: "With the help of heat, it binds to the resistant spore coat."},
+    {q: "Safranin stains the vegetative cell wall.", a: "True", o: ["True", "False"], p: 16, i: "It acts as a counterstain for the non-spore parts."},
+    {q: "Gas gangrene is a clinical condition caused by C. perfringens.", a: "True", o: ["True", "False"], p: 16, i: "Table: C. perfringens - Gas gangrene."},
+    {q: "Does C. difficile affect the respiratory system?", a: "No", o: ["Yes", "No"], p: 16, i: "No, it causes Pseudomembranous colitis (intestinal)."},
+    {q: "Is C. tetani motile?", a: "Yes", o: ["Yes", "No"], p: 16, i: "Most Clostridium species are motile."},
+    {q: "Steam is applied 'after' the Malachite green.", a: "True", o: ["True", "False"], p: 16, i: "Procedure: Apply stain, THEN heat with steam."}
+];
+
+let qList = [], cIdx = 0, score = 0;
+function start() { qList = lab9Data.sort(() => Math.random() - 0.5); render(); }
+function render() {
+    let q = qList[cIdx];
+    document.getElementById('q-text').innerText = q.q;
+    document.getElementById('progress').innerText = `${cIdx + 1} / 35`;
+    let opts = document.getElementById('options'); opts.innerHTML = '';
+    q.o.forEach(o => {
+        let b = document.createElement('button'); b.innerText = o;
+        b.onclick = () => check(o, b); opts.appendChild(b);
+    });
+    document.getElementById('feedback').style.display = 'none';
+    document.getElementById('next-btn').style.display = 'none';
+}
+function check(choice, b) {
+    let q = qList[cIdx]; let f = document.getElementById('feedback');
+    if(choice === q.a) { score++; b.classList.add('correct'); f.innerHTML = "✅ <b>Correct!</b><br>Page " + q.p + ": " + q.i; }
+    else { b.classList.add('wrong'); f.innerHTML = "❌ <b>Wrong!</b><br>Page " + q.p + ": " + q.i; }
+    f.style.display = 'block'; document.getElementById('next-btn').style.display = 'block';
+    document.getElementById('score').innerText = `النتيجة: ${score}`;
+    Array.from(document.querySelectorAll('.options button')).forEach(btn => btn.disabled = true);
+}
+function nextQ() { 
+    cIdx++; 
+    if(cIdx < 35) render(); 
+    else document.getElementById('quiz-container').innerHTML = `<h2>انتهى اختبار Lab 9!</h2><h3>الدرجة النهائية: ${score}/35</h3><button onclick="location.reload()" style="padding:15px; border-radius:15px; border:none; background:var(--accent); color:white; cursor:pointer; width:100%;">إعادة المحاولة</button>`;
+}
+start();
+</script>
+</body>
+</html>
